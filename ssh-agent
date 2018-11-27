@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+SSH_AGENT_ENV_FILE=~/.ssh/agent.env
+
+# load existing agent environment if it is found
+if [[ -f "$SSH_AGENT_ENV_FILE" ]]; then
+    . "$SSH_AGENT_ENV_FILE" >/dev/null
+fi
+
+# determine if the ssh agent is running
+#   0: running with key
+#   1: running without key
+#   2: not running
+SSH_AGENT_STATUS=$(ssh-add -l >/dev/null 2>&1; echo $?)
+
+# return if the agent is running
+if [[ "$SSH_AGENT_STATUS" == "0" ]]; then
+    unset SSH_AGENT_ENV_FILE SSH_AGENT_STATUS
+    
+    return
+fi
+
+# start ssh-agent
+if [[ ! "${SSH_AUTH_SOCK:-}" ]] || [[ "$SSH_AGENT_STATUS" == 2 ]]; then
+    if [[ "${MSYSTEM:-}" =~ ^MING|^MSYS ]]; then
+        # fork a new process using cmd.exe/start on windows to preserve
+        # the ssh-agent process if this shell is terminated
+
+        rm "$SSH_AGENT_ENV_FILE" 2>/dev/null
+        
+        printf "\e[94mINFO: Forking shell to persist ssh-agent ... " >&2
+        
+        start /wait bash -c "( umask 077; ssh-agent -s >'$SSH_AGENT_ENV_FILE' )"
+
+        for i in $(seq 1 10); do
+            if [[ -f "$SSH_AGENT_ENV_FILE" ]]; then
+                break
+            fi
+
+            sleep 0.1
+        done
+
+        if [[ -f "$SSH_AGENT_ENV_FILE" ]]; then
+            printf "OK\n\e[0m"
+        else
+            printf "ERROR\n\e[0m"
+        fi
+    else
+        # *nix os' can start the agent directly
+        ( umask 077; ssh-agent -s >"$SSH_AGENT_ENV_FILE" )
+    fi
+
+    # source the agent environment
+    . "$SSH_AGENT_ENV_FILE" >/dev/null
+fi
+
+# add private keys found in ~/.ssh
+{ find ~/.ssh -maxdepth 1 -type f \
+    | xargs grep -l 'PRIVATE KEY' \
+    | xargs ssh-add 2>/dev/null & disown
+} 2>/dev/null
+
+# cleanup
+unset SSH_AGENT_ENV_FILE SSH_AGENT_STATUS
