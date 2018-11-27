@@ -30,15 +30,7 @@ if [[ ! "${SSH_AUTH_SOCK:-}" ]] || [[ "$SSH_AGENT_STATUS" == 2 ]]; then
         
         printf "\e[94mINFO: Forking shell to persist ssh-agent ... " >&2
         
-        start /wait bash -c "( umask 077; ssh-agent -s >'$SSH_AGENT_ENV_FILE' )"
-
-        for i in $(seq 1 10); do
-            if [[ -f "$SSH_AGENT_ENV_FILE" ]]; then
-                break
-            fi
-
-            sleep 0.1
-        done
+        start //wait bash -c "( umask 077; ssh-agent -s >'$SSH_AGENT_ENV_FILE' )"
 
         if [[ -f "$SSH_AGENT_ENV_FILE" ]]; then
             printf "OK\n\e[0m"
