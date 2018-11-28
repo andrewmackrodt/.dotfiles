@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
 
+# override username with home folder basename, e.g. where a directory
+# junction is used to alias the original home folder when a Microsoft
+# account has been used to create the user account which would normally
+# truncate the username to the first 5 characters of the e-mail address
+PS1=${PS1/\\u/$(basename "$HOME" | tr '[:upper:]' '[:lower:]')}
+
 # force color terminal
 export TERM=xterm-256color
