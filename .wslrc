@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
 
+alias xattrfix='2>/dev/null find {bin,bin-dev,node_modules,vendor}/ -type f -not -name "*.*" -exec grep -l -E "^#!" {} \; | xargs -r chmod 0775'
