@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-SSH_AGENT_ENV_FILE=~/.ssh/agent.env
+if [[ "${MSYSTEM:-}" =~ ^MING|^MSYS ]]; then
+    SSH_AGENT_ENV_FILE=~/.ssh/msys-agent.env
+else
+    SSH_AGENT_ENV_FILE=~/.ssh/agent.env
+fi
 
 # load existing agent environment if it is found
 if [[ -f "$SSH_AGENT_ENV_FILE" ]]; then
